@@ -1,36 +1,35 @@
 ### Interrupts.
 
-***NOTE: we are updating the lab itself (since it got pulled earlier
-than usual) but the readings and concepts all apply***
+***Make sure you understand the readings in the [PRELAB](PRELAB.md)]***: 
+  - how the hardware level works for arm exceptions, how to work with 
+    modes, how to use the compiler to figure out low level information,
+    how to setup interrupts with the broadcom.
+  - Go through the code in `timer-int-ex` which is a complete working
+    timer interrupt example.
 
-***Make sure you read***: 
-  - [INTERRUPTS](../../guides/INTERRUPT-CHEAT-SHEET.md): this is a cheat sheet of useful page
-    numbers and some notes on how the ARMv6 does exceptions.
-  - [caller-callee registers](../../guides/caller-callee/README.md):
-    this shows a cute trick on how to derive which registers `gcc` treats
-    as caller (must be saved by the caller if it wants to use them after
-    a procedure call) and callee (must be saved by a procedure before
-    it can use them and restored when it returns).
-  - [mode bugs](../../notes/mode-bugs/README.md): these are examples
-    of different mistakes to make with modes and banked registers.
+Today's lab is a few small-ish pieces, hopefully that give you a better
+view of bare-metal execution, assembly code, interrupts and exceptions.
 
-
-Big picture for today's lab:
+Big picture:
 
    0. We'll show how to setup interrupts / exceptions on the r/pi.
-   Interrupts and exceptions are useful for responding quickly to devices,
-   doing pre-emptive threads, handling protection faults, and other things.
+      Interrupts and exceptions are useful for responding quickly to
+      devices, doing pre-emptive threads, handling protection faults,
+      and other things.
 
    1. We strip interrupts down to a fairly small amount of code.  You will
-   go over each line and get a feel for what is going on.  
+      go over each line and get a feel for what is going on.
 
    2. You will use timer interrupts to implement a simple but useful
-   statistical profiler similar to `gprof`.  As is often the case,
-   because the r/pi system is so simple, so too is the code we need to
-   write, especially as compared to on a modern OS.
+      statistical profiler similar to `gprof`.  As is often the case,
+      because the r/pi system is so simple, so too is the code we need
+      to write, especially as compared to on a modern OS.
 
-The good thing about the lab is that interrupts are often made very
-complicated or just discussed so abstractly it's hard to understand them.
+   3. You'll then implement system calls --- these work using exceptions
+      which possibly confusingly use the same interrupt methods. 
+
+Interrupts confuse people.  Often they get implemented in a complicated
+way, or get discussed so abstractly it's hard to understand them.
 Hopefully by the end of today you'll have a reasonable grasp of at
 least one concrete implementation.  If you start kicking its tires and
 replacing different pieces with equivalant methods you should get a
@@ -40,14 +39,18 @@ pretty firm grasp.
 
 Turn-in:
 
-  1. `timer-int`: give the shortest time between timer interrupts you can
-     make, and two ways to make the code crash.
+  1. `0-timer-int`: give the shortest time between timer interrupts
+     you can make.  Make two small edits to the `0-timer-int` register
+     save and restore code (in `interrupts-asm.S`) that make the code
+     crash in different locations.  This will help get an intuition for
+     how things can go wrong.
 
-  2. Build a simple system call: show your `1-syscall` works.
+  2. `1-gprof`: Implement `gprof.c`.   When you
+     run you should see most of the time being spent in `PUT32`, `GET32`
+     or the `uart` routines.
 
-  3. Implement `gprof` (in the `2-gprof` subdirectory).   You should
-     run it and show that the results are reasonable.  Explain why it
-     spends all the time in the uart code.
+  3. `2-syscall`: `make check` passes.   In particular, for `1-syscall.c`
+      You can switch to User level, run a system call, and resume.
 
 -----------------------------------------------------------------
 #### Background: Why interrupts
@@ -91,59 +94,188 @@ and so eliminates variable reads b/c it doesn't see anyone changing them
 (partial solution: mark shared variables as `volatile`).  We'll implement
 different ways to mitigate these problems over the next couple of weeks.
 
+Historically interrupts and exceptions are related, but differ
+in how they get initiated:
+  - Exceptions are traps caused by something the code did, such as
+    a divide by zero, a memory protection fault or (maybe confusingly)
+    a system call instruction (today).  
+
+  - Interrupts are traps caused by some exogenous event, such as
+    a network packet arriving, a GPIO pin triggering from high to low,
+    or a timer expiring (today).  They might be related to the currently
+    running code, or they might have nothing to do with it or, indeed,
+    any process.
+
+In both cases, the hardware does roughly the same thing:
+  1. Saves enough of the state of the currently running code that it 
+     can be resumed. For the ARMv6: it records the trapped pc (by moving
+     it to the `lr`) and preserves the stack pointer by switching to a 
+     banked copy.
+  2. Jumping to a pre-determined code location, possibly after changing
+     processor levels.  On the ARMv6: it switches to the exception or
+     interrupt mode and, by default, jumps to a fixed address starting
+     at 0.
+  3. After the exception/interrupt is handled, the code jumps back to
+     the faulting location with the original register values restored.  
+     There usually has to be some kind of hardware support that allows 
+     this jump and restore to be partially combined since you can't do
+     one and then the other.  MIPS reserves two registers that the 
+     code can use; ARMv6 provides a special instruction that will
+     load the previously saved process status register while 
+     simulatenously setting the pc.
+
+As a final point: generally exceptions or interrupts are not recursive
+by default.  (If you look at the timer interrupt code, you can probably
+see what the challenge would be for taking a second interrupt while
+handling the first.)  You can often take steps to make them so (ARMv6
+can), but that's begging for destruction.   It is an interesting puzzle,
+so can be illuminating, but I would try to avoid in reality.
+
+
 ----------------------------------------------------------------------------
 ### Part 0: timer interrupts.
 
-Look through the code in `timer-int`, compile it, run it.  Make sure
+Look through the code in `timer-int-ex`, compile it, run it.  Make sure
 you can answer the questions in the comments.  We'll walk through it
 in class.
 
+-----------------------------------------------------------------------------
+### Part 1: Using interrupts to build a profiler.
+
+The nice thing about doing everything from scratch is that simple things
+are simple to do.  We don't have to fight a big OS that can't get out
+of its own way.
+
+Today's lab is a good example: implementing a statistical profiler.
+The basic intuition:
+   1. Setup timer interrupts so that you get them fairly often.
+   2. At each interrupt, get the address of the interrupted program
+      counter and increment a counter associated with it.  
+   3. Over time, these counts will build up: the locations with the
+      highest count will be where your code spends most of its time.
+
+The implementation will take about 30-40 lines of code in total.
+
+
+The basic algorithm:
+
+ 1. Use `kmalloc` to allocate an array at least as big as the code.
+    (We give you  a trivial `kmalloc` to use.)  Compute the code
+    size using the labels defined in `libpi/memmap` (we give C
+    definitions in `libpi/include/memmap.h`).
+
+ 2. In the interrupt handler, use the program counter value to index
+    into this array and increment the associated count.  NOTE: its very
+    easy to mess up sizes.  Each instruction is 4 bytes, so you'll divide
+    the `pc` by 4.
+
+ 3. Periodically you can print out the non-zero values in this array
+    along with the `pc` value they correspond to.  You should be able to
+    look in the disassembled code (`gprof.list`) to see which instruction
+    these correspond to.
+
+    NOTE: We do not want to profile our profiling code, so have a way
+    to disable counts when doing this printing.
+
+ 4. Expected results are most counts should be in `PUT32`, `GET32`,
+    and various `uart` routines.  If you see a bunch of your `gprof`
+    program counters its b/c of a mistake in step 3.
+
+Congratulations!  You've built something that not many people in the
+Gates building know how to do.
+
 ----------------------------------------------------------------------------
-### Part 1: make a simple system call.
+### Part 2: make a simple system call.
 
 One we can get timer exceptions, we (perhaps surprisingly) have enough
 infrastructure to make trivial system calls.   Since we are already
 running in supervisor mode, these are not that useful as-is, but making
-them now will show how trivial they actually are.  In particular, look in
-`1-syscall` and write the needed code in:
+them now will show how trivial they actually are.  
 
-  1. `interrupts-asm.S`: you should be able to largely rip off the timer interrupt
-     code to forward system call.  NOTE: a huge difference is that we are
-     already running at supervisor level, so all registers are live.  You need
-     to handle this differently.
+You will implement two versions:
+  - `0-syscall.c`: this just calls system calls at our current process
+     level.  If you look in `libpi/staff-start.S` you see we start in
+     `SUPER_MODE`, which is the same level system calls run at.  This
+     means we already have a live stack pointer and you shouldn't use it.
 
-  2. `syscall.c`: finish the system call vector code (should just be a few lines).
-     You want to act on system call 1 and reject all other calls with a `-1`.
+  - `1-syscall.c`: this is a real system call.  You will implement the
+     code to switch to user level, and then handle two trivial system
+     calls.
+
+
+##### `0-syscall.c`
+
+Look in `2-syscall` and write the needed code in:
+
+  1. `interrupts-asm.S`: you should be able to largely rip off the
+     timer interrupt code to forward system call.  NOTE: a huge difference
+     is that we are already running at supervisor level, so all registers
+     are live.  You need to handle this differently.
+
+
+  2. `0-syscall.c`: finish the system call vector code (should just be
+     a few lines).  You want to act on system call 1 and reject all
+     other calls with a `-1`.
 
 This doesn't take much code, but you will have to think carefully about which
 registers need to be saved, etc.
 
------------------------------------------------------------------------------
-### Part 2: Using interrupts to build a profiler.
+##### `1-syscall.c`
 
-The nice thing about doing everything from scratch is that simple things are simple
-to do.  We don't have to fight a big OS that can't get out of its own way.   
+This is a real system call.  You'll need to:
+  1. Make a new interrupt table that uses a different `swi` handler.
+     You should copy and paste the existing one and update any labels.
+     Admittedly this is mechanical work, but you need to think 
+     slightly.
+  2. Implement `run_user_code_asm`: this will switch to user mode,
+     set the stack pointer register to a given stack value, and
+     jump to a give code address.  
 
-Today's lab is a good example: implementing a statistical profiler.  The basic intuition:
-   1. Setup timer interrupts so that we get them fairly often.
-   2. At each interrupt, record which location in the code we interrupted.  (I.e., where
-      the program counter is.)
-   3. Over time, we will interrupt where your code spends most of its time more often.
+     For hints: look at `notes/mode-bugs/bug4-asm.S` for how to roughly
+     do what you want at a different level.
 
-The implementation will take about 30-40 lines of code in total.  You'll build two things:
- 1. A `kmalloc` that will allocate memory.  We will not have a `free`, so `kmalloc` is
-   trivial: have a pointer to where "free memory" starts, and increment a counter based
-   on the requested size.
- 2. Use `kmalloc` to allocate an array at least as big as the code.
- 3. In the interrupt handler, use the program counter value to index into this array
-    and increment the associated count.  NOTE: its very easy to mess up sizes.  Each
-    instruction is 4 bytes, so you'll divide the `pc` by 4.  
- 4. Periodically you can print out the non-zero values in this array along with the 
-   `pc` value they correspond to.  You should be able to look in the disassembled code
-   (`gprof.list`) to see which instruction these correspond to.
+  3. Finish implementing `1-syscall.c:syscall_vector`.  This is
+     mainly just checking that you are at the right level.
 
-Congratulations!  You've built something that not many people in the Gates building
-know how to do.
+If this works, congratulations!  You have a working user-level
+system call.  This small amount of code is really all there is to it.
+
+------------------------------------------------------------------------
+### Part 3: use the vector register: 3-vector-base
+
+For this you'll do some simple tricks to speed up your interrupt
+code and make it more flexble:
+
+You'll write the inline assembly to set the vector base.  See:
+  - 3-121 in `../../docs/arm1176.pdf`
+
+What to do:
+  - You only have to modify `1-vector-base/vector-base.h`
+  - There are two tests (you have to modify the makefile to run each).
+  - When the tests pass, move the `vector-base.h` file to `libpi/src` and make
+    sure they still work.
+
+  - The test `0-test-vector-base.c` should should show a speedup and
+    complete correctly.
+
+  2. Make your own: `libpi/src/int-init-reg.c` that implements the
+     routine:
+
+        void int_init_reg(void *int_vector_addr)
+
+     Which should be a re-implementation of `int_init` using the vector
+     base register file (which you will have to include) instead of
+     copying the table itself.
+
+     As usual: Make sure to add that file to `put-your-src-here.mk`.
+
+  3. Make a copy of your `1-gpio-int` directory and convert it over to
+     use the vector base method.
+
+  4. Use the prelab code to check which registers you can remove
+     from your save-restore in the interrupt handler.   If should be
+     the case that if you "clobber" a callee-saved register you do
+     not want to skip, `gcc` will not save it.
 
 -----------------------------------------------------------------------------
 ### lab extensions:

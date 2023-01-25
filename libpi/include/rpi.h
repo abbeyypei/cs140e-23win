@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <string.h>
 
 
 /*****************************************************************************
@@ -108,6 +109,18 @@ void dsb(void);
 // use this if you need a device memory barrier.
 void dev_barrier(void);
 
+/*******************************************************************************
+ * simple memory allocation: no free, just have to reboot().
+ */
+
+// returns 0-filled memory.
+void *kmalloc(unsigned nbytes) ;
+void *kmalloc_aligned(unsigned nbytes, unsigned alignment);
+
+// initialize and set where the heap starts and give a maximum
+// size in bytes
+void kmalloc_init_set_start(void *addr, unsigned max_nbytes);
+
 /*****************************************************************************
  * Low-level code: you could do in C, but these are in assembly to defeat
  * the compiler.
@@ -128,7 +141,7 @@ void dummy(unsigned);
 void nop(void);
 
 
-#include <string.h>
+/* #include <string.h> */
 
 #   include "demand.h"
 #ifndef RPI_UNIX
