@@ -17,10 +17,10 @@ void interrupt_vector(unsigned pc) {
 // r0 = the first argument passed to the system call.
 int syscall_vector(unsigned pc, uint32_t r0) {
     uint32_t inst, sys_num;
-
+    inst = *((unsigned *)pc);
+    sys_num = inst & 0xffffff;
     // figure out the instruction and the system call number.
-    unimplemented();
-    trace("inst=%b, sys_num=%d\n", inst, sys_num);
+    trace("inst=%x, sys_num=%d\n", inst, sys_num);
 
     switch(sys_num) {
     case 1: 
