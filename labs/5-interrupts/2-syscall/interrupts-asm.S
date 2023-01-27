@@ -65,6 +65,20 @@ _data_abort_asm:              .word data_abort_asm
 _interrupt_asm:               .word interrupt_asm
 _interrupt_table_end:
 
+.globl _interrupt_table_new
+.globl _interrupt_table_new_end
+_interrupt_table_new:
+  ldr pc, _reset_asm
+  ldr pc, _undefined_instruction_asm
+  ldr pc, _software_interrupt_asm_new
+  ldr pc, _prefetch_abort_asm
+  ldr pc, _data_abort_asm
+  ldr pc, _reset_asm
+  ldr pc, _interrupt_asm
+
+_software_interrupt_asm_new:      .word software_interrupt_asm_new
+_interrupt_table_new_end:
+
 @ only handler that should run since we only enable general interrupts
 interrupt_asm:
   mov sp, #INT_STACK_ADDR   @ i believe we have 512mb - 16mb, so this should be safe
@@ -88,14 +102,35 @@ interrupt_asm:
 software_interrupt_asm:
     @ runs at system level (p.a2-5): assumes we have a sp
     @ implement: 
-    @   - save regs
+    @   - save regs 
     @   - need to figure out what lr points to,
+    push  {r1-r12,lr}
     @   - mov the original r0 into r1
+    mov r1, r0 
     @   - mov the pointer to the syscall inst into r0
+    mov r0, lr
+    sub r0, r0, #4
     @   - call
+    bl syscall_vector
     @   - restore regs
+    pop   {r1-r12,lr}
     @   - return from the exception.
-    asm_not_implemented()
+    movs pc, lr
+
+@ change this to call your system call handler.
+software_interrupt_asm_new:
+    mov sp, #INT_STACK_ADDR
+    push  {r1-r12,lr}
+    @   - mov the original r0 into r1
+    mov r1, r0 
+    @   - mov the pointer to the syscall inst into r0
+    mov r0, lr
+    sub r0, r0, #4
+    @   - call
+    bl syscall_vector
+    @   - restore regs
+    pop   {r1-r12,lr}
+    @   - return from the exception.
     movs pc, lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

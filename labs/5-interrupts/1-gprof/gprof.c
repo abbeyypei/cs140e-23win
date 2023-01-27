@@ -27,21 +27,34 @@
 
 // allocate table.
 //    few lines of code
+static volatile unsigned *hist;
+static volatile unsigned size;
 static unsigned gprof_init(void) {
-    unimplemented();
+    size = __code_end__ - __code_start__;
+    hist = (unsigned *)kmalloc(size*sizeof(unsigned));
+    for (unsigned i = 0; i < size; i++) {
+        hist[i] = 0;
+    }
+    return size;
 }
 
 // increment histogram associated w/ pc.
 //    few lines of code
 static void gprof_inc(unsigned pc) {
-    unimplemented();
+    hist[(pc-(unsigned)(&__code_start__)) / 4] ++;
 }
 
 // print out all samples whose count > min_val
 //
 // make sure sampling does not pick this code up!
 static void gprof_dump(unsigned min_val) {
-    unimplemented();
+    system_disable_interrupts();
+    for (size_t i = 0; i < size; i ++) {
+        if (hist[i] > min_val) {
+            printk("pc %x %d\n", i*4 + (unsigned)(&__code_start__), hist[i]);
+        }
+    }
+    system_enable_interrupts();
 }
 
 
