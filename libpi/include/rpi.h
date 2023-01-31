@@ -49,19 +49,17 @@ void uart_init(void);
 void uart_disable(void);
 
 // get one byte from the uart
-int uart_get8(void);
-// put one byte on the uart:
-// returns < 0 on error.
-int uart_put8(uint8_t c);
+int uart_getc(void);
+// put one byte on the uart
+void uart_putc(unsigned c);
 
 // returns -1 if no byte, the value otherwise.
-int uart_get8_async(void);
+int uart_getc_async(void);
 
 // 0 = no data, 1 = at least one byte
 int uart_has_data(void);
-
 // 0 = no space, 1 = space for at least 1 byte
-int uart_can_put8(void);
+int uart_can_putc(void);
 
 // flush out the tx fifo
 void uart_flush_tx(void);
@@ -71,21 +69,21 @@ void uart_flush_tx(void);
  */
 
 // delays for <ticks> (each tick = a few cycles)
-void delay_cycles(uint32_t ticks) ;
+void delay_cycles(unsigned ticks) ;
 
 // delay for <us> microseconds.
-void delay_us(uint32_t us) ;
+void delay_us(unsigned us) ;
 
 // delay for <ms> milliseconds
-void delay_ms(uint32_t ms) ;
+void delay_ms(unsigned ms) ;
 
 // returns time in usec.
 // NOTE: this can wrap around!   do not do direct comparisons.
 // this does a memory barrier.
-uint32_t timer_get_usec(void) ;
+unsigned timer_get_usec(void) ;
 
 // no memory barrier.
-uint32_t timer_get_usec_raw(void);
+unsigned timer_get_usec_raw(void);
 
 /****************************************************************************
  * Reboot the pi smoothly.
@@ -135,10 +133,6 @@ void put32(volatile void *addr, unsigned v);
 unsigned GET32(unsigned addr);
 unsigned get32(const volatile void *addr);
 
-// *(volatile uint8_t *)addr = x;
-void put8(void *addr, uint8_t x);
-void PUT8(uint32_t addr, uint8_t x);
-
 // jump to <addr>
 void BRANCHTO(unsigned addr);
 
@@ -170,10 +164,6 @@ void nop(void);
 
 // entry point definition
 void notmain(void);
-
-// provide your own implementation if you want to 
-// do something during a busy wait.
-void rpi_wait(void);
 
 /*********************************************************
  * some gcc helpers.
