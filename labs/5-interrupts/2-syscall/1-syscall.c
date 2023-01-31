@@ -13,7 +13,6 @@ void run_user_code(void (*fn)(void), void *stack) {
     assert(stack);
     demand((unsigned)stack % 8 == 0, stack must be 8 byte aligned);
 
-    todo("implement <run_user_code_asm> in syscall-asm.S!");
     run_user_code_asm(fn, stack);
     not_reached();
 }
@@ -31,12 +30,20 @@ static inline uint32_t cpsr_get(void) {
     return cpsr;
 }
 
+static inline uint32_t spsr_get(void) {
+    uint32_t spsr;
+    asm volatile("mrs %0,spsr" : "=r"(spsr));
+    return spsr;
+}
+
 // pc should point to the system call instruction.
 //      can see the encoding on a3-29:  lower 24 bits hold the encoding.
 int syscall_vector(unsigned pc, uint32_t r0) {
     uint32_t inst, sys_num, mode;
+    inst = *((unsigned *)pc);
+    sys_num = inst & 0xffffff;
+    mode = (spsr_get()) & (0b11111);
 
-    todo("check that spsr is USER level\n");
     // put spsr mode in <mode>
     if(mode != USER_MODE)
         panic("mode = %b: expected %b\n", mode, USER_MODE);
@@ -70,9 +77,8 @@ void user_fn(void) {
     assert(&var < &stack[N]);
 
 
-    todo("check that the current mode is USER_LEVEL");
     // put the cpsr mode in <mode>
-    unsigned mode = 0;
+    unsigned mode = (cpsr_get()) & (0b11111);
     if(mode != USER_MODE)
         panic("mode = %b: expected %b\n", mode, USER_MODE);
     else
@@ -89,7 +95,9 @@ void user_fn(void) {
 
 
 void notmain() {
-    todo("use int_init_vec to install vector with a different swi handler");
+    extern uint32_t _interrupt_table_new[];
+    extern uint32_t _interrupt_table_new_end[];
+    int_init_vec(_interrupt_table_new, _interrupt_table_new_end);
 
 #if 0
     // you'll have to define these two symbols.
@@ -97,8 +105,7 @@ void notmain() {
     int_init_vec(_int_table_user, _int_table_user_end);
 #endif
 
-    todo("figure out a reasonable stack address using <stack>");
-    uint64_t *sp = 0;
+    uint64_t *sp = &stack[N] ;
 
     output("calling user_fn with stack=%p\n", sp);
     run_user_code(user_fn, sp); 

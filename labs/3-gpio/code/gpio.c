@@ -12,6 +12,7 @@
 // see broadcomm documents for magic addresses.
 enum {
     GPIO_BASE = 0x20200000,
+    gpio_fsel0 = (GPIO_BASE + 0x00),
     gpio_set0  = (GPIO_BASE + 0x1C),
     gpio_clr0  = (GPIO_BASE + 0x28),
     gpio_lev0  = (GPIO_BASE + 0x34)
@@ -28,6 +29,11 @@ enum {
 void gpio_set_output(unsigned pin) {
     if(pin >= 32)
         return;
+    unsigned addr = gpio_fsel0 + (pin / 10) * 0x4;
+    unsigned shift = (pin % 10) * 3;
+    unsigned mask = 0x7 << shift;
+    
+    PUT32(addr, (GET32(addr) & (~mask)) | (0x001) << shift);
 
   // implement this
   // use <gpio_fsel0>
@@ -37,14 +43,14 @@ void gpio_set_output(unsigned pin) {
 void gpio_set_on(unsigned pin) {
     if(pin >= 32)
         return;
-  // implement this
-  // use <gpio_set0>
+    PUT32(gpio_set0, 0x1 << pin);
 }
 
 // set GPIO <pin> off
 void gpio_set_off(unsigned pin) {
     if(pin >= 32)
         return;
+    PUT32(gpio_clr0, 0x1 << pin);
   // implement this
   // use <gpio_clr0>
 }
@@ -64,12 +70,20 @@ void gpio_write(unsigned pin, unsigned v) {
 // set <pin> to input.
 void gpio_set_input(unsigned pin) {
   // implement.
+  if(pin >= 32)
+        return;
+    unsigned addr = gpio_fsel0 + (pin / 10) * 0x4;
+    unsigned shift = (pin % 10) * 3;
+    unsigned mask = 0x7 << shift;
+    
+    PUT32(addr, (GET32(addr) & (~mask)) | (0x000) << shift);
 }
 
 // return the value of <pin>
 int gpio_read(unsigned pin) {
-  unsigned v = 0;
-
+  if(pin >= 32)
+        return 0;
   // implement.
-  return v;
+  return (GET32(gpio_lev0) & (0x1 << pin));
+  
 }
