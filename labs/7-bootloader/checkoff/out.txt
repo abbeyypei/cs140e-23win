@@ -1,0 +1,82 @@
+make -C 1-trace-control check
+-------------------------------------------------
+checking <2-test-vm-fault>: 
+  about to emit new <2-test-vm-fault.test>:
+     my-install --trace-control  ./2-test-vm-fault.bin > 2-test-vm-fault.test
+-n      new <2-test-vm-fault.test> lines = 
+       9
+-n      old ref <2-test-vm-fault.out>: lines=
+       9
+  about to compare new <2-test-vm-fault.test> to old <2-test-vm-fault.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <4-debug-hw-test>: 
+  about to emit new <4-debug-hw-test.test>:
+     my-install --trace-control  ./4-debug-hw-test.bin > 4-debug-hw-test.test
+-n      new <4-debug-hw-test.test> lines = 
+       9
+-n      old ref <4-debug-hw-test.out>: lines=
+       9
+  about to compare new <4-debug-hw-test.test> to old <4-debug-hw-test.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <7-test-ping-pong>: 
+  about to emit new <7-test-ping-pong.test>:
+     my-install --trace-control  ./7-test-ping-pong.bin > 7-test-ping-pong.test
+-n      new <7-test-ping-pong.test> lines = 
+     108
+-n      old ref <7-test-ping-pong.out>: lines=
+     108
+  about to compare new <7-test-ping-pong.test> to old <7-test-ping-pong.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <hello>: 
+  about to emit new <hello.test>:
+     my-install --trace-control  ./hello.bin > hello.test
+-n      new <hello.test> lines = 
+       9
+-n      old ref <hello.out>: lines=
+       9
+  about to compare new <hello.test> to old <hello.out>: 
+  Success!  Matched!
+make -C 1-trace-all check
+-------------------------------------------------
+checking <2-test-vm-fault>: 
+  about to emit new <2-test-vm-fault.test>:
+     my-install --trace-all  ./2-test-vm-fault.bin > 2-test-vm-fault.test
+-n      new <2-test-vm-fault.test> lines = 
+   18249
+-n      old ref <2-test-vm-fault.out>: lines=
+   18249
+  about to compare new <2-test-vm-fault.test> to old <2-test-vm-fault.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <4-debug-hw-test>: 
+  about to emit new <4-debug-hw-test.test>:
+     my-install --trace-all  ./4-debug-hw-test.bin > 4-debug-hw-test.test
+-n      new <4-debug-hw-test.test> lines = 
+   12973
+-n      old ref <4-debug-hw-test.out>: lines=
+   12973
+  about to compare new <4-debug-hw-test.test> to old <4-debug-hw-test.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <7-test-ping-pong>: 
+  about to emit new <7-test-ping-pong.test>:
+     my-install --trace-all  ./7-test-ping-pong.bin > 7-test-ping-pong.test
+-n      new <7-test-ping-pong.test> lines = 
+    8944
+-n      old ref <7-test-ping-pong.out>: lines=
+    8944
+  about to compare new <7-test-ping-pong.test> to old <7-test-ping-pong.out>: 
+  Success!  Matched!
+-------------------------------------------------
+checking <hello>: 
+  about to emit new <hello.test>:
+     my-install --trace-all  ./hello.bin > hello.test
+-n      new <hello.test> lines = 
+    3381
+-n      old ref <hello.out>: lines=
+    3381
+  about to compare new <hello.test> to old <hello.out>: 
+  Success!  Matched!
