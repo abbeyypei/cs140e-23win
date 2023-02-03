@@ -60,7 +60,7 @@ void simple_boot(int fd, const uint8_t *buf, unsigned n) {
         } 
     }
 
-    ck_eq32(fd, "CRC32 mismatch", crc32(buf, n), get_uint32(fd));
+    ck_eq32(fd, "CRC32 mismatch", crc32(buf, n), get_op(fd));
 
     // 4. handle it: send a PUT_CODE + the code.
     trace_put32(fd, PUT_CODE);
