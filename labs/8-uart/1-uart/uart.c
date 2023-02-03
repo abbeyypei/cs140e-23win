@@ -20,6 +20,7 @@ enum {
     aux_mu_io_reg = (AUX_BASE + 0x00),
     aux_mu_iir_reg = (AUX_BASE + 0x08),
     aux_mu_cntl_reg = (AUX_BASE + 0x20),
+    aux_mu_baud_reg = (AUX_BASE + 0x28),
 
 };
 
@@ -51,6 +52,10 @@ void uart_init(void) {
     uint32_t aux_iir_reg = GET32(aux_mu_iir_reg);
     aux_iir_reg |= 0b110;
     PUT32(aux_mu_iir_reg, aux_iir_reg);
+
+    dev_barrier();
+    uint32_t baud_rate = 270;
+    PUT32(aux_mu_baud_reg, baud_rate);
 
 }
 
