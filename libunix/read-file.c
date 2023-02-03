@@ -26,5 +26,25 @@ void *read_file(unsigned *size, const char *name) {
     //    - read entire file into buffer.  
     //    - make sure any padding bytes have zeros.
     //    - return it.   
-    unimplemented();
+    struct stat sb;
+    if (stat(name, &sb) < 0) fatal("stat error");
+    unsigned nbytes = (unsigned) sb.st_size;
+    *size = nbytes;
+
+    int fd = open(name, O_RDONLY);
+    if (fd == -1) fatal("open error");
+
+    unsigned buf_size = (nbytes / 4) * 4 + (4 - nbytes % 4);
+    void *buf = calloc(4+buf_size, sizeof(char));
+    if (buf == NULL) fatal("calloc error");
+    
+    unsigned bytes_read = 0;
+    unsigned stat;
+    while (bytes_read < nbytes) {
+        stat = read(fd, buf, nbytes);
+        if (stat < 0) fatal("read error");
+        bytes_read += stat;
+    }
+    close(fd);
+    return buf;
 }

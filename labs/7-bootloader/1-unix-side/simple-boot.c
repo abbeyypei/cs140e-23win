@@ -41,16 +41,33 @@ void simple_boot(int fd, const uint8_t *buf, unsigned n) {
     } 
 
     // 1. reply to the GET_PROG_INFO
-    todo("reply to GET_PROG_INFO");
+    trace_put32(fd, PUT_PROG_INFO);
+    trace_put32(fd, ARMBASE);
+    trace_put32(fd, n);
+    trace_put32(fd, crc32(buf,n));
 
     // 2. drain any extra GET_PROG_INFOS
-    todo("drain any extra GET_PROG_INFOS");
+    while((op = get_op(fd)) == GET_PROG_INFO) {
+        trace("getting op %x \n", op);
+    }
 
     // 3. check that we received a GET_CODE
-    todo("check that we received a GET_CODE");
+    if (op != GET_CODE) {
+        while((op = get_op(fd)) != GET_CODE) {
+            trace("expected initial GET_CODE, got <%x>: discarding.\n", op);
+            // have to remove just one byte since if not aligned, stays not aligned
+            get_uint8(fd);
+        } 
+    }
+
+    ck_eq32(fd, "CRC32 mismatch", crc32(buf, n), get_op(fd));
 
     // 4. handle it: send a PUT_CODE + the code.
-    todo("send PUT_CODE + the code in <buf>");
+    trace_put32(fd, PUT_CODE);
+    for (unsigned i = 0; i < n; i+=1) {
+        trace_put8(fd, buf[i]);
+    }
+
 
     // 5. Wait for BOOT_SUCCESS
     ck_eq32(fd, "BOOT_SUCCESS mismatch", BOOT_SUCCESS, get_op(fd));

@@ -19,8 +19,15 @@
 //     counter can overflow.
 static unsigned 
 has_data_timeout(unsigned timeout) {
-    boot_todo("has_data_timeout: implement this routine");
-    return 0;
+    uint32_t s = timer_get_usec();
+    while (1)
+    {
+        uint32_t e = timer_get_usec();
+        if (uart_has_data() == 1) return 1;
+        if ((e - s) >= timeout) {
+            return 0;
+        }
+    }
 }
 
 // iterate:
@@ -37,7 +44,10 @@ has_data_timeout(unsigned timeout) {
 //      Its from this loop (since the LED goes on for each 
 //      received packet)
 static void wait_for_data(unsigned usec_timeout) {
-    boot_todo("wait_for_data: implement this routine");
+    boot_put32(GET_PROG_INFO);
+    while (has_data_timeout(usec_timeout) == 0) {
+        boot_put32(GET_PROG_INFO);
+    }
 }
 
 // IMPLEMENT this routine.
@@ -51,11 +61,14 @@ int get_code(uint32_t *code_addr) {
     /****************************************************************
      * Add your code below: 2,3,4,5,6
      */
-    uint32_t addr = 0;
 
     // 2. expect: [PUT_PROG_INFO, addr, nbytes, cksum] 
     //    we echo cksum back in step 4 to help debugging.
-    boot_todo("wait for laptop/server response: echo checksum back");
+    // boot_todo("wait for laptop/server response: echo checksum back");
+    uint32_t put_prog_info = boot_get32();
+    uint32_t addr = boot_get32();
+    uint32_t nbytes = boot_get32();
+    uint32_t crc = boot_get32();
 
     // 3. If the binary will collide with us, abort with a BOOT_ERROR. 
     // 
@@ -65,26 +78,34 @@ int get_code(uint32_t *code_addr) {
     // 
     //    more general: use address of PUT32 and __PROG_END__ to detect: 
     //    see libpi/memmap and the memmap.h header for definitions.
-    boot_todo("check that binary will not hit the bootloader code");
+    // boot_todo("check that binary will not hit the bootloader code");
+    if ((*(uint32_t *)PUT32) > addr && (*(uint32_t *)PUT32) < addr + nbytes) boot_err(BOOT_ERROR, "binary will collide");
 
     // 4. send [GET_CODE, cksum] back.
-    boot_todo("send [GET_CODE, cksum] back\n");
-
+    // boot_todo("send [GET_CODE, cksum] back\n");
+    boot_put32(GET_CODE);
+    boot_put32(crc);
     // 5. we expect: [PUT_CODE, <code>]
     //  read each sent byte and write it starting at 
     //  <addr> using PUT8
     //
     // common mistake: computing the offset incorrectly.
-    boot_todo("boot_get8() each code byte and use PUT8() to write it to memory");
-
+    // boot_todo("boot_get8() each code byte and use PUT8() to write it to memory");
+    uint32_t put_code = boot_get32();
+    for (unsigned i = 0; i < nbytes; i++) {
+        uint8_t c = uart_get8();
+        PUT8(addr+i, c);
+    }
+    
     // 6. verify the cksum of the copied code using:
     //         boot-crc32.h:crc32.
     //    if fails, abort with a BOOT_ERROR.
-    boot_todo("verify the checksum of copied code");
+    // boot_todo("verify the checksum of copied code");
+    if (! (crc32((void *)addr, nbytes) == crc)) boot_err(BOOT_ERROR, "checksum failed");
 
     // 7. send back a BOOT_SUCCESS!
-    boot_putk("<PUT YOUR NAME HERE>: success: Received the program!");
-    boot_todo("fill in your name above");
+    boot_putk("<Yuxin Pei>: success: Received the program!");
+    // boot_todo("fill in your name above");
 
     // woo!
     boot_put32(BOOT_SUCCESS);

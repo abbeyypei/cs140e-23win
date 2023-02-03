@@ -3,7 +3,7 @@
 
 int main(void) {
     const char *name = "./read-file.out";
-    const char *hello = "hello";
+    const char *hello = "hello oh my god ??ds??";
     
     int fd = create_file(name);
     int i;
