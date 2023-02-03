@@ -18,6 +18,5 @@ void notmain(void) {
 
         uart_put8('\n');
     }
-    // oh: wow: nasty bug: if you don't flush tx, this breaks.
-    // uart_init();
+//    uart_init();
 }
