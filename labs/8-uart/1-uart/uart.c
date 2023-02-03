@@ -14,12 +14,44 @@
 //
 #include "rpi.h"
 
+enum {
+    AUX_ENABLES = 0x20215004,
+    AUX_BASE = 0x20215040,
+    aux_mu_io_reg = (AUX_BASE + 0x00),
+    aux_mu_iir_reg = (AUX_BASE + 0x08),
+    aux_mu_cntl_reg = (AUX_BASE + 0x20),
+
+};
+
 // called first to setup uart to 8n1 115200  baud,
 // no interrupts.
 //  - you will need memory barriers, use <dev_barrier()>
 //
 //  later: should add an init that takes a baud rate.
 void uart_init(void) {
+    dev_barrier();
+
+    gpio_set_function(GPIO_TX, GPIO_FUNC_ALT5);
+    gpio_set_function(GPIO_RX, GPIO_FUNC_ALT5);
+    
+    dev_barrier();
+
+    uint32_t aux_enable_reg = GET32(AUX_ENABLES);
+    aux_enable_reg |= 0b1;
+    PUT32(AUX_ENABLES, aux_enable_reg);
+
+    dev_barrier();
+
+    uint32_t aux_cntl_reg = GET32(aux_mu_cntl_reg);
+    aux_cntl_reg &= 0b00;
+    PUT32(aux_mu_cntl_reg, aux_cntl_reg);
+
+    dev_barrier();
+    
+    uint32_t aux_iir_reg = GET32(aux_mu_iir_reg);
+    aux_iir_reg |= 0b110;
+    PUT32(aux_mu_iir_reg, aux_iir_reg);
+
 }
 
 // disable the uart.
