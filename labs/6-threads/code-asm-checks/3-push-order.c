@@ -23,9 +23,16 @@ void check_push_order(void) {
     uint32_t *ret = push_r4_r12_asm(p);
     assert(ret < p);
 
-    // check that regs holds the right values.
-    todo("write the code to check that <ret> holds the expected values.");
-    todo("see caller in <asm-check.S:push_r4_r12_asm>");
+    // check that regs holds the right values.asm-check.S:push_r4_r12_asm>");
+    assert(*ret == 4);
+    assert(*(ret+1) == 5);
+    assert(*(ret+2) == 6);
+    assert(*(ret+3) == 7);
+    assert(*(ret+4) == 8);
+    assert(*(ret+5) == 9);
+    assert(*(ret+6) == 10);
+    assert(*(ret+7) == 11);
+    assert(*(ret+8) == 12);
 
     return;
 
