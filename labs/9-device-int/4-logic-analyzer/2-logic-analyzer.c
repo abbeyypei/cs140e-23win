@@ -14,7 +14,9 @@ static cq_t uartQ;
 
 enum { out_pin = 21, in_pin = 20 };
 static volatile unsigned n_rising_edge, n_falling_edge;
-
+static volatile unsigned counter = 0;
+static volatile unsigned buffer[5];
+static volatile unsigned last_cyc;
 
 // client has to define this.
 void interrupt_vector(unsigned pc) {
@@ -26,10 +28,23 @@ void interrupt_vector(unsigned pc) {
     //  - make sure you clear the GPIO event!
     //  - using the circular buffer is pretty slow. should tune this.
     //    easy way is to use a uint32_t array where the counter is volatile.
-    unsigned s = cycle_cnt_read();
-
+    unsigned cyc = cycle_cnt_read();
+    unsigned period = last_cyc ? cyc-last_cyc : 0;
+    last_cyc = cyc;
+    cq_push32(&uartQ, period);
     dev_barrier();
-    unimplemented();
+
+    if (gpio_event_detected(in_pin)) {
+        if (gpio_read(in_pin) == 0) {
+            n_falling_edge ++;
+            cq_push32(&uartQ, 1);
+        } else {
+            n_rising_edge ++;
+            cq_push32(&uartQ, 0);
+        }
+        gpio_event_clear(in_pin);
+    }
+    
     dev_barrier();
 }
 
@@ -43,6 +58,8 @@ void notmain() {
     gpio_int_rising_edge(in_pin);
     gpio_int_falling_edge(in_pin);
 
+    gpio_event_clear(in_pin);
+
     uint32_t cpsr = cpsr_int_enable();
 
     assert(gpio_read(in_pin) == 1);
@@ -51,7 +68,7 @@ void notmain() {
 
     // starter code.
     // make sure this works first, then try to measure the overheads.
-    delay_ms(100);
+    // delay_ms(100);
 
     // this will cause transitions every time, so you can compare times.
     for(int l = 0; l < 2; l++) {
