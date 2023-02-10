@@ -9,6 +9,8 @@ else
 # SUPPORT_OBJS += rpi-thread.o  thread-asm.o
 endif
 
+COMMON_SRC += interrupt-asm.S
+
 # define this if you need to give the device for your pi
 TTYUSB = 
 BOOTLOADER = my-install
@@ -19,7 +21,7 @@ RUN=1
 # part 1
 PROGS := $(wildcard ./2-*.c)
 PROGS := $(wildcard ./1-*.c)
-PROGS := $(wildcard ./0-*.c)
+# PROGS := $(wildcard ./0-*.c)
 
 CFLAGS += -Wno-unused-function -Wno-unused-variable 
 
@@ -36,9 +38,9 @@ include $(CS140E_2023_PATH)/libpi/mk/Makefile.template
 
 # override the default rules.  should have a cleaner solution
 2-brkpt-test.elf:  2-brkpt-test.o $(DEPS) $(START) $(LIBS)
-	$(LD) $(START)  $< -T $(MEMMAP) -o $@  $(LIBS)
+	$(LD) $(START)  $< interrupt-asm.o -T $(MEMMAP) -o $@  $(LIBS)
 1-watchpt-test.elf:  1-watchpt-test.o $(DEPS) $(START) $(LIBS)
-	$(LD) $(START)  $< -T $(MEMMAP) -o $@  $(LIBS)
+	$(LD) $(START)  $< interrupt-asm.o -T $(MEMMAP) -o $@  $(LIBS)
 
 
 clean::

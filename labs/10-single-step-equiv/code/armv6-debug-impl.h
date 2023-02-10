@@ -11,6 +11,7 @@ coproc_mk(ifar, p15, 0, c6, c0, 0)
 coproc_mk(ifsr, p15, 0, c5, c0, 1)
 coproc_mk(dscr, p14, 0, c0, c1, 0)
 coproc_mk(wcr0, p14, 0, c0, c0, 7)
+coproc_mk(wvr0, p14, 0, c0, c0, 6)
 coproc_mk(bcr0, p14, 0, c0, c0, 5)
 coproc_mk(wfar, p14, 0, c0, c6, 0)
 // you'll need to define these and a bunch of other routines.
@@ -27,20 +28,20 @@ static inline void cp14_wcr0_set(uint32_t r);
 //      non-zero).
 static inline int cp14_is_enabled(void) {
     uint32_t dscr = cp14_dscr_get();
-    return bits_get(dscr, 15, 15);
+    return bit_get(dscr, 15);
 }
 
 // enable debug coprocessor 
 static inline void cp14_enable(void) {
     // if it's already enabled, just return?
     if(cp14_is_enabled())
-        panic("already enabled\n");
+        return;
 
     // for the core to take a debug exception, monitor debug mode has to be both 
     // selected and enabled --- bit 14 clear and bit 15 set.
     uint32_t dscr = cp14_dscr_get();
-    dscr = bits_clr(dscr, 14, 14);
-    dscr = bits_set(dscr, 15, 15, 1);
+    dscr = bit_clr(dscr, 14);
+    dscr = bit_set(dscr, 15);
     cp14_dscr_set(dscr);
 
     assert(cp14_is_enabled());
@@ -52,8 +53,8 @@ static inline void cp14_disable(void) {
         return;
 
     uint32_t dscr = cp14_dscr_get();
-    dscr = bits_clr(dscr, 15, 15);
-    dscr = bits_set(dscr, 14, 14, 1);
+    dscr = bit_clr(dscr, 15);
+    dscr = bit_set(dscr, 14);
     cp14_dscr_set(dscr);
 
     assert(!cp14_is_enabled());
@@ -135,6 +136,11 @@ static inline void cp14_wcr0_disable(void) {
     cp14_wcr0_set(wcr);
 
     assert(!cp14_wcr0_is_enabled());
+}
+
+static inline void set_cp14_wvr0(uint32_t v) {
+    cp14_wvr0_set(v<<2);
+
 }
 
 // Get watchpoint fault using WFAR

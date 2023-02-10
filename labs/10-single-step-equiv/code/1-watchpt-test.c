@@ -46,6 +46,8 @@ void notmain(void) {
      */
     enum { null = 0 };
 
+    cp14_wcr0_disable();
+
     // just started, should not be enabled.
     assert(!cp14_wcr0_is_enabled());
 
@@ -53,10 +55,20 @@ void notmain(void) {
     //  - see 13-17 for how to set bits in the <wcr0>
 
     uint32_t b = 0;  // set this to the needed bits in wcr0
-    unimplemented();
+    b = bit_clr(b, 20);
+    b = bits_set(b, 14, 15, 0b00);
+    b = bits_set(b, 3, 4, 0b11);
+    b = bits_set(b, 1, 2, 0b11);
+    b = bit_set(b, 0);
+    b = bits_set(b, 5, 8, 0b1111);
+    cp14_wcr0_set(b);
 
     assert(cp14_wcr0_is_enabled());
     trace("set watchpoint for addr %p\n", null);
+    set_cp14_wvr0(null);
+
+    // set wcr0
+    cp14_wcr0_enable();
 
     trace("should see a store fault!\n");
     PUT32(null,0);
