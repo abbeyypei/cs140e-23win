@@ -41,8 +41,6 @@ void gpio_set_off(unsigned pin) {
   if(pin >= 32 && pin != 47)
         return;
   PUT32(gpio_clr0 + (pin < 32 ? 0 : 4), 1 << pin % 32);
-  // implement this
-  // use <gpio_clr0>
 }
 
 // set <pin> to <v> (v \in {0,1})
@@ -70,7 +68,6 @@ int gpio_read(unsigned pin) {
   unsigned mask = 1 << (pin % 32);
 
   unsigned v = (GET32(gpio_lev0 + (pin < 32 ? 0 : 4)) & mask) >> (pin % 32);
-  // implement.
   return v;
 }
 
