@@ -12,14 +12,26 @@
  *  - vector_base_get
  */
 
-// return the current value vector base is set to.
+cp_asm_set(vector_base_asm, p15, 0, c12, c0, 0)
+cp_asm_get(vector_base_asm, p15, 0, c12, c0, 0)
+
 static inline void *vector_base_get(void) {
-    todo("implement");
+    return (void*)vector_base_asm_get();
 }
 
-// check that not null and alignment is good.
+// check alignment.
 static inline int vector_base_chk(void *vector_base) {
-    todo("add checks");
+    if(!vector_base) {
+        // output("null vector base!\n");
+        return 0;
+    }
+
+    uint32_t v = (uint32_t)vector_base;
+    if(bits_get(v, 0, 4) != 0) {
+        // output("lower 5 bits of the vector base should be 0, have: %x\n", v);
+        return 0;
+    }
+    
     return 1;
 }
 
@@ -32,7 +44,7 @@ static inline void vector_base_set(void *vec) {
     if(v) 
         panic("vector base register already set=%p\n", v);
 
-    todo("set vector base");
+    vector_base_asm_set((uint32_t)vec);
 
     v = vector_base_get();
     if(v != vec)
@@ -46,8 +58,8 @@ vector_base_reset(void *vec) {
     if(!vector_base_chk(vec))
         panic("illegal vector base %p\n", vec);
 
-    void *old_vec = 0;
-    todo("check that <vec> is good reset vector base");
+    void *old_vec = vector_base_get();
+    vector_base_asm_set((uint32_t)vec);
 
     assert(vector_base_get() == vec);
     return old_vec;
