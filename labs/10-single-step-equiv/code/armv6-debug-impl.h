@@ -15,6 +15,7 @@ coproc_mk(wvr0, p14, 0, c0, c0, 6)
 coproc_mk(bcr0, p14, 0, c0, c0, 5)
 coproc_mk(bvr0, p14, 0, c0, c0, 4)
 coproc_mk(wfar, p14, 0, c0, c6, 0)
+coproc_mk(far, p15, 0, c6, c0, 0)
 // you'll need to define these and a bunch of other routines.
 static inline uint32_t cp15_dfsr_get(void);
 static inline uint32_t cp15_ifar_get(void);
@@ -55,7 +56,7 @@ static inline void cp14_disable(void) {
 
     uint32_t dscr = cp14_dscr_get();
     dscr = bit_clr(dscr, 15);
-    dscr = bit_set(dscr, 14);
+    // dscr = bit_set(dscr, 14);
     cp14_dscr_set(dscr);
 
     assert(!cp14_is_enabled());
@@ -90,7 +91,9 @@ static inline void cp14_bcr0_disable(void) {
 // was this a brkpt fault?
 static inline int was_brkpt_fault(void) {
     // use IFSR and then DSCR
+    // CHECK IF BIT 10 IS SET
     uint32_t ifsr = cp15_ifsr_get();
+    if (!bit_get(ifsr, 10) == 0) return 0;
     uint32_t dscr = cp14_dscr_get();
 
     return (bits_eq(ifsr, 0, 3, 0b0010) && bits_eq(dscr, 2, 5, 0b0001));
@@ -140,7 +143,7 @@ static inline void cp14_wcr0_disable(void) {
 }
 
 static inline void set_cp14_wvr0(uint32_t v) {
-    cp14_wvr0_set(v<<2);
+    cp14_wvr0_set(v);
 }
 static inline void set_cp14_bvr0(uint32_t v) {
     cp14_bvr0_set(v);
@@ -150,6 +153,11 @@ static inline void set_cp14_bvr0(uint32_t v) {
 static inline uint32_t watchpt_fault_pc(void) {
     uint32_t wfar = cp14_wfar_get();
     return wfar - 0x8;
+}
+
+static inline uint32_t watchpt_fault_addr() {
+    uint32_t far = cp15_far_get();
+    return far;
 }
     
 #endif

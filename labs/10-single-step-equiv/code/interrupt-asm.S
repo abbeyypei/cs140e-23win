@@ -73,7 +73,7 @@ prefetch_abort_asm:
   @ vpush {s0-s15}	        @ uncomment if want to save caller-saved fp regs
 
   mov   r0, lr              @ Pass old pc
-  bl    data_abort_vector    @ C function
+  bl    prefetch_abort_vector    @ C function
 
   @ vpop {s0-s15}           @ pop caller saved fp regs
   pop   {r0-r12,lr} 	    @ pop integer registers
@@ -86,10 +86,10 @@ prefetch_abort_asm:
 .globl _interrupt_vector
 .align 5
 _interrupt_vector:
-  ldr pc, _reset_asm
-  ldr pc, _undefined_instruction_asm
-  ldr pc, _software_interrupt_asm
-  ldr pc, prefetch_abort_asm
-  ldr pc, data_abort_interrupt_asm
-  ldr pc, _reset_asm
-  ldr pc, _interrupt_asm
+  ldr pc, =_reset_asm
+  ldr pc, =_undefined_instruction_asm
+  ldr pc, =_software_interrupt_asm
+  ldr pc, = prefetch_abort_asm
+  ldr pc, = data_abort_asm
+  ldr pc, =_reset_asm
+  ldr pc, =_interrupt_asm

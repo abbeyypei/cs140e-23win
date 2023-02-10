@@ -74,7 +74,6 @@ void watchpt_set0(uint32_t addr, wfault_handler_t h) {
     uint32_t b = 0;
     set_cp14_wvr0(addr);
 
-    uint32_t b = 0;  // set this to the needed bits in wcr0
     b = bit_clr(b, 20);
     b = bits_set(b, 14, 15, 0b00);
     b = bits_set(b, 3, 4, 0b11);
@@ -82,7 +81,7 @@ void watchpt_set0(uint32_t addr, wfault_handler_t h) {
     b = bit_set(b, 0);
     b = bits_set(b, 5, 8, 0b1111);
     cp14_wcr0_set(b);
-    
+
     assert(cp14_wcr0_is_enabled());
     watchpt_handler = h;
 }
