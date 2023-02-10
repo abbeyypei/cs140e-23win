@@ -13,6 +13,7 @@ coproc_mk(dscr, p14, 0, c0, c1, 0)
 coproc_mk(wcr0, p14, 0, c0, c0, 7)
 coproc_mk(wvr0, p14, 0, c0, c0, 6)
 coproc_mk(bcr0, p14, 0, c0, c0, 5)
+coproc_mk(bvr0, p14, 0, c0, c0, 4)
 coproc_mk(wfar, p14, 0, c0, c6, 0)
 // you'll need to define these and a bunch of other routines.
 static inline uint32_t cp15_dfsr_get(void);
@@ -140,13 +141,15 @@ static inline void cp14_wcr0_disable(void) {
 
 static inline void set_cp14_wvr0(uint32_t v) {
     cp14_wvr0_set(v<<2);
-
+}
+static inline void set_cp14_bvr0(uint32_t v) {
+    cp14_bvr0_set(v);
 }
 
 // Get watchpoint fault using WFAR
 static inline uint32_t watchpt_fault_pc(void) {
     uint32_t wfar = cp14_wfar_get();
-    return wfar;
+    return wfar - 0x8;
 }
     
 #endif

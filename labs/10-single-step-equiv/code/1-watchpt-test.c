@@ -54,6 +54,8 @@ void notmain(void) {
     // setup watchpoint 0.  needs two registers.
     //  - see 13-17 for how to set bits in the <wcr0>
 
+    set_cp14_wvr0(null);
+
     uint32_t b = 0;  // set this to the needed bits in wcr0
     b = bit_clr(b, 20);
     b = bits_set(b, 14, 15, 0b00);
@@ -65,7 +67,6 @@ void notmain(void) {
 
     assert(cp14_wcr0_is_enabled());
     trace("set watchpoint for addr %p\n", null);
-    set_cp14_wvr0(null);
 
     // set wcr0
     cp14_wcr0_enable();

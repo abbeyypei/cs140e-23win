@@ -57,11 +57,11 @@ void prefetch_abort_vector(unsigned lr) {
 void notmain(void) {
     // 1. install exception handlers: must have a valid trampoline for
     // prefetch_abort_vector
-    unimplemented();
-
+    extern uint32_t _interrupt_vector[];
+    vector_base_reset(_interrupt_vector);
     // 2. enable the debug coprocessor.
     cp14_enable();
-
+    cp14_bcr0_disable();
     // just started, should not be enabled.
     assert(!cp14_bcr0_is_enabled());
 
@@ -80,6 +80,7 @@ void notmain(void) {
         prefetch flush.
     */
 
+
     /* 
      * see 13-17 for how to set bits
      * set:
@@ -91,10 +92,18 @@ void notmain(void) {
      *   - enabled.
      */
     uint32_t b = 0;
+    set_cp14_bvr0((uint32_t)foo);
 
+    b = bit_clr(b, 20);
+    b = bits_set(b, 20, 21, 0b00);
+    b = bits_set(b, 14, 15, 0b00);
+    b = bits_set(b, 5, 8, 0b1111);
+    b = bits_set(b, 1, 2, 0b11);
+    b = bit_set(b, 0);
 
+    cp14_bcr0_set(b);
+    
     // set breakpoint using bcr0 and bvr0
-    unimplemented();
 
     assert(cp14_bcr0_is_enabled());
     output("set breakpoint for addr %p\n", foo);
