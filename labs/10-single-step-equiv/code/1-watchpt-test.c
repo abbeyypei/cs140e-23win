@@ -34,8 +34,8 @@ void notmain(void) {
     // 1. install exception handlers using vector base.
     //      must have an entry for data-aborts that has
     //      a valid trampoline to call <data_abort_vector>
-    unimplemented();
-
+    extern uint32_t _interrupt_vector[];
+    vector_base_reset(_interrupt_vector);
     // 2. enable the debug coprocessor.
     cp14_enable();
 
