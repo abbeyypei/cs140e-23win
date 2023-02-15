@@ -19,7 +19,7 @@ void brkpt_mismatch_set(uint32_t addr) {
     set_cp14_bvr0(addr);
 
     b = bit_clr(b, 20);
-    b = bits_set(b, 20, 21, 0b00);
+    b = bits_set(b, 20, 22, 0b100);
     b = bits_set(b, 14, 15, 0b00);
     b = bits_set(b, 5, 8, 0b1111);
     b = bits_set(b, 1, 2, 0b11);

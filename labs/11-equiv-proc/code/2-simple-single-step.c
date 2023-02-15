@@ -34,7 +34,7 @@ void simple_single_step(uint32_t pc) {
         panic("pc=%x: is not at user level: <%s>?\n", pc, mode_str(spsr));
 
     trace("single step pc=%x\n", pc);
-    brkpt_mismatch_set(pc + 0x4);
+    brkpt_mismatch_set(pc);
 }
 
 void rfe_asm(uint32_t regs[2]);
