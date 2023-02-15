@@ -34,7 +34,7 @@ void simple_single_step(uint32_t pc) {
         panic("pc=%x: is not at user level: <%s>?\n", pc, mode_str(spsr));
 
     trace("single step pc=%x\n", pc);
-    brkpt_mismatch_set(pc);
+    brkpt_mismatch_set(pc + 0x4);
 }
 
 void rfe_asm(uint32_t regs[2]);
@@ -46,10 +46,11 @@ void notmain(void) {
     brkpt_mismatch_start(); 
 
     // from <1-srs-rfe.c>
-    uint32_t regs[0];
+    uint32_t regs[2];
     regs[0] = (uint32_t)nop_10;   // in <1-srs-rfe-asm.S>
     regs[1] = USER_MODE;
     trace("about to jump to pc=[%x] with cpsr=%x\n",
             regs[0], regs[1]);
+    brkpt_mismatch_set(regs[0]);
     rfe_asm(regs);
 }

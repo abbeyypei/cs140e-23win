@@ -1,5 +1,7 @@
 #ifndef __BREAKPOINT_H__
 #define __BREAKPOINT_H__
+#include "rpi.h"
+#include "vector-base.h"
 
 
 // disable mismatch
