@@ -21,12 +21,20 @@
 
 @ save all the registers in ascending order.
 swi_trampoline:
-    TRAMPOLINE_FULL_REGS(do_syscall)
-
-@    push {r1-r12,r14}
-@    bl do_syscall
-@    pop {r1-r12,r14}
-@    movs pc, lr
+    sub sp, sp, #68;
+    stm sp, {r0-r14}^;
+    str lr, [sp, #60];                        
+    mov   r2, lr;                             
+    mrs   r1, spsr;                           
+    str r1, [sp, #64];                        
+    mov   r0, sp;                            
+    bl    do_syscall;                                 
+    ldr r1, [sp, #64];                        
+    msr   spsr, r1;                           
+    ldm   sp, {r0-r14}^;                      
+    add sp, sp, #60;                          
+    rfe sp;                                   
+    asm_not_reached()
 
 @single_step_trampoline:
 @    mov sp, #INT_STACK_ADDR

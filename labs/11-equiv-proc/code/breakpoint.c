@@ -11,7 +11,6 @@ void brkpt_mismatch_stop(void) {
 void brkpt_mismatch_start(void) {
     cp14_enable();
     cp14_bcr0_disable();
-    cp14_wcr0_disable();
 }
 
 // set breakpoint on <addr>
