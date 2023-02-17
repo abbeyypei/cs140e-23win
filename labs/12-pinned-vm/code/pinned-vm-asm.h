@@ -16,6 +16,16 @@
 #define ASM_RET_TYPE
 #include "asm-helpers.h"
 
+cp_asm(lockdown_index, p15, 5, c15, c4, 2);
+cp_asm(lockdown_va, p15, 5, c15, c5, 2);
+cp_asm(lockdown_pa, p15, 5, c15, c6, 2);
+cp_asm(lockdown_attr, p15, 5, c15, c7, 2);
+cp_asm(xlate_pa, p15, 0, c7, c4, 0);
+cp_asm_set(xlate_kern_rd, p15, 0, c7, c8, 0);
+cp_asm_set(xlate_kern_wr, p15, 0, c7, c8, 1);
+
+cp_asm(dfsr, p15, 0, c5, c0, 0)
+
 // arm1176.pdf: 3-149
 void lockdown_index_set(uint32_t x);
 uint32_t lockdown_index_get(void);
