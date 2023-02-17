@@ -9,8 +9,6 @@
 
 #include "proc.h"
 
-void mov_ident(void);
-
 static int verbose_p;
 static void dump_regs(uint32_t regs[17]) {
     if(!verbose_p)
@@ -46,37 +44,6 @@ int do_syscall(uint32_t regs[17]) {
     proc_exit();
     proc_run_one();
     not_reached();
-}
-
-void single_step_full(uint32_t regs[17]) {
-    enum { STACK_SIZE = 1024*64 };
-    uint32_t pc = regs[15];
-
-    if(!brkpt_fault_p())
-        panic("pc=%x: is not a breakpoint fault??\n", pc);
-
-    proc_t *p = curproc_get();
-    p->reg_hash = fast_hash_inc32(regs, 17*sizeof regs[0], p->reg_hash);
-
-    if(verbose_p)  {
-        output("------------------------------------------------\n");
-        output("cnt=%d: single step pc=%x, hash=%x\n", p->inst_cnt, pc, p->reg_hash);
-        dump_regs(regs);
-    }
-
-    uint32_t spsr = spsr_get();
-    if(mode_get(spsr) != USER_MODE)
-        panic("pc=%x: is not at user level: <%s>?\n", pc, mode_str(spsr));
-    if(regs[16] != spsr)
-        panic("saved spsr %x not equal to <%x>?\n", regs[16], spsr);
-    
-    proc_save(regs);
-    proc_run_one();
-}
-
-void hello(void) {
-    output("hello world from pid=%d\n", curproc_get()->pid);
-    asm volatile("swi 1" ::: "memory");
 }
 
 void notmain(void) {

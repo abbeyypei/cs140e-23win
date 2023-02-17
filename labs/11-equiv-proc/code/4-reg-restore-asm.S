@@ -1,7 +1,10 @@
 #include "regs-save-restore.h"
 
 MK_FN(switchto_user_asm)
-    ldm r0, {r0-r15}^
+    mov r14, r0
+    ldm r14, {r0-r14}^
+    add r14, r14, #60
+    rfe r14
     
 @ save all the registers in ascending order.
 swi_trampoline:

@@ -51,6 +51,6 @@ void notmain(void) {
     regs[1] = USER_MODE;
     trace("about to jump to pc=[%x] with cpsr=%x\n",
             regs[0], regs[1]);
-    brkpt_mismatch_set(regs[0]);
+    brkpt_mismatch_set(regs[0]-0x4);
     rfe_asm(regs);
 }
