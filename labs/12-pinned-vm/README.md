@@ -211,6 +211,7 @@ The tests for this:
 If you want, you can ignore our starter code and write all that from scratch.
 If you want to use our stuff, there's a few helpers you implement.
 
+
 ----------------------------------------------------------------------
 ## Part 2: implement `pinned-vm.c:pin_mmu_on(procmap_t *p)` 
 
@@ -222,7 +223,51 @@ tests.
 Note that you'll have to handle the domains in the domain control register.
 
 ----------------------------------------------------------------------
-## Part 3: handle a couple exceptions
+## Part 3: implement `pinned-vm.c:lockdown_print_entries`
+
+
+Mine is something like:
+
+
+        void lockdown_print_entry(unsigned idx) {
+            trace("   idx=%d\n", idx);
+            lockdown_index_set(idx);
+            uint32_t va_ent = lockdown_va_get();
+            uint32_t pa_ent = lockdown_pa_get();
+            unsigned v = bit_get(pa_ent, 0);
+        
+            if(!v) {
+                trace("     [invalid entry %d]\n", idx);
+                return;
+            }
+        
+            // 3-149
+            ...fill in the needed vars...
+            trace("     va_ent=%x: va=%x|G=%d|ASID=%d\n",
+                va_ent, va, G, asid);
+        
+            // 3-150
+            ...fill in the needed vars...
+            trace("     pa_ent=%x: pa=%x|nsa=%d|nstid=%d|size=%b|apx=%b|v=%d\n",
+                        pa_ent, pa, nsa,nstid,size, apx,v);
+        
+            // 3-151
+            ...fill in the needed vars...
+            trace("     attr=%x: dom=%d|xn=%d|tex=%b|C=%d|B=%d\n",
+                    attr, dom,xn,tex,C,B);
+        }
+        
+        void lockdown_print_entries(const char *msg) {
+            trace("-----  <%s> ----- \n", msg);
+            trace("  pinned TLB lockdown entries:\n");
+            for(int i = 0; i < 8; i++)
+                lockdown_print_entry(i);
+            trace("----- ---------------------------------- \n");
+        }
+
+
+----------------------------------------------------------------------
+## Part 4: handle a couple exceptions
 
 For this part you'll write all the code.  
 
@@ -236,11 +281,88 @@ A domain fault.  Write a single test that:
      for `bx lr` to a heap location and jump to it.
 
 
+Useful domain pages:
+  - B4-10: what the bit values mean for the `domain` field.
+  - B4-15: how addresses are translated and checked for faults.
+  - B4-27: the location / size of the `domain` field in the segment page table entry.
+  - B4-42: setting the domain register.
+
+
 A invalid access fault:
   1. Write tests that 
      do load, store, and jump to an unmapped addresss and extend the
      data abort and prefetch abort handlers above to print out the 
      reason and faulting address.
+
+
+NOTE: if you delete `staff-mmu-except.o` and your `panic` or `reboot`
+locks up, add this code to your pinned-vm.c`:
+
+        // this is called by reboot: we turn off mmu so that things work.
+        void reboot_callout(void) {
+            if(mmu_is_enabled())
+                staff_mmu_disable();
+        }
+
+which will let `reboot` / `panic` reboot without hanging.
+
+----------------------------------------------------------------------
+#### Some intuition and background on domains.
+
+ARM has an interesting take on protection.  Like most modern architectures
+it allows you to mark pages as invalid, read-only, read-write, executable.
+However, it gives you a way to quickly disable these restrictions in a
+fine-grained way through the use of domains.
+
+Mechanically it works as follows.
+  - each page-table entry (PTE) has a 4-bit field stating which single
+  domain (out of 16 possible) the entry belongs to.
+
+  - the system control register (CP15) has a 32-bit domain register (`c3`,
+  page B4-42) that contains 2-bits for each of the 16 domains stating
+  what mode each the domain is in.
+    - no-access (`0b00`): no load or store can be done to any virtual
+    address belonging to the domain;
+
+  - a "client" (`0b01`): all accesses must be consistent with the
+    permissions in their associated PTE;
+
+  - a "manager" (`0b11`): no permission checks are done, can read or
+    write any virtual address in the PTE region.
+
+  - B4-15: On each memory reference, the hardware looks up the page
+    table entry (in reality: the cached TLB entry) for the virtual address,
+    gets the domain number, looks up the 2-bit state of the domain in the
+    domain register checks if it is allowed.
+
+As a result, you can quickly do a combination of both removing all access
+to a set of regions, and granting all access to others by simply writing
+a 32-bit value to a single coprocessor register.
+
+To see how these pieces play together, consider an example where code
+with more privileges (e.g., the OS) wants to run code that has less
+privileges using the same address translations (e.g., a device driver
+it doesn't trust).
+   - The OS assigns the device driver a unique domain id (e.g., `2`).
+   - The OS tags all PTE entries the driver is allowed to touch with `2`
+   in the `domain` field.
+   - When the OS is running it sets all domains to manager (`0b11`) mode
+   so that it can read and write all memory.
+   - When the OS wants to call the device driver, it switches the state of
+   domain `2` to be a client (`0b01`) and all other domains as no-access
+   (`0b00`).
+
+Result:
+  1. When the driver code runs, it cannot corrupt any other kernel memory.
+  2. Switching domains is fast compared to switching page tables (the
+  typical approach).
+  3. As a nice bonus: All the addresses are the same in both pieces of
+  code, which makes many things easier.
+
+##### Bits to set in Domain
+<table><tr><td>
+  <img src="images/part2-domain.png"/>
+</td></tr></table>
      
 ----------------------------------------------------------------------
 ## Extension:
