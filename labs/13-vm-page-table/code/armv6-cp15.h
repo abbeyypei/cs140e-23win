@@ -1,5 +1,9 @@
 #ifndef __ARMV6_CP15_H__
 #define __ARMV6_CP15_H__
+#include "asm-helpers.h"
+
+cp_asm(ctrl, p15, 0, c1, c0, 0)
+cp_asm(dom, p15, 0, c3, c0, 0)
 // engler, cs140e: the different data structures used by the arm coprocessor.
 
 /**************************************************************************************

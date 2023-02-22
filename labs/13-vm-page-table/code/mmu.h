@@ -11,7 +11,7 @@
 
 /* one time initialation of caches, tlb, etc */
 void mmu_init(void);
-void staff_mmu_init(void);
+// void staff_mmu_init(void);
 // install trap handlers: should make more fine-grained.
 void mmu_install_handlers(void);
 
@@ -59,10 +59,10 @@ fld_t * staff_mmu_lookup_section(fld_t *pt, unsigned va);
 
 // turn on/off mmu: handles all the cache flushing, barriers, etc.
 void mmu_enable(void);
-void staff_mmu_enable(void);
+// void staff_mmu_enable(void);
 
 void mmu_disable(void);
-void staff_mmu_disable(void);
+// void staff_mmu_disable(void);
 
 // same as disable/enable except client gives the control reg to use --- 
 // this allows messing with cache state, etc.
@@ -77,15 +77,15 @@ void staff_set_procid_ttbr0(unsigned pid, unsigned asid, fld_t *pt);
 
 // set the 16 2-bit access control fields and do any needed coherence.
 void domain_access_ctrl_set(uint32_t d);
-void staff_domain_access_ctrl_set(uint32_t d);
+// void staff_domain_access_ctrl_set(uint32_t d);
 
 // return the domain access control register.
 uint32_t domain_access_ctrl_get(void);
-uint32_t staff_domain_access_ctrl_get(void);
+// uint32_t staff_domain_access_ctrl_get(void);
 
 // set protection for [va,va+nsection) to <perm>
 void mmu_mprotect(fld_t *pt, unsigned va, unsigned nsec, unsigned perm);
-void staff_mmu_mprotect(fld_t *pt, unsigned va, unsigned nsec, unsigned perm);
+// void staff_mmu_mprotect(fld_t *pt, unsigned va, unsigned nsec, unsigned perm);
 
 // helpers
 // mark [va, va+ nsec * 1MB) with the indicated permissions.
