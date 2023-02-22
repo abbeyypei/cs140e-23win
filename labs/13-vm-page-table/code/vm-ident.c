@@ -35,14 +35,19 @@ fld_t * vm_ident_mmu_init(int start_p) {
 
     // map the GPIO: make sure these are not cached and not writeback.
     // [how to check this in general?]
-    todo("map GPIO (see procmap.h)");
+    staff_mmu_map_section(pt, 0x20000000, 0x20000000, dom_id);
+    staff_mmu_map_section(pt, 0x20100000, 0x20100000, dom_id);
+    staff_mmu_map_section(pt, 0x20200000, 0x20200000, dom_id);
+
 
     // setup user stack (note: grows down!)
-    todo("map user stack (see procmap.h)");
+    uint32_t stack_begin = STACK_ADDR - OneMB;
+    staff_mmu_map_section(pt, stack_begin, stack_begin, dom_id);
 
     // setup interrupt stack (note: grows down!)
     // if we don't do this, then the first exception = bad infinite loop
-    todo("map interrupt stack (see procmap.h)");
+    uint32_t int_stack_begin = INT_STACK_ADDR - OneMB;
+    staff_mmu_map_section(pt, int_stack_begin, int_stack_begin, dom_id);
 
     // 3. install fault handler to catch if we make mistake.
     extern uint32_t default_vec_ints[];
