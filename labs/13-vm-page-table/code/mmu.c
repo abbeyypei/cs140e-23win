@@ -3,6 +3,7 @@
 #include "rpi-interrupts.h"
 #include "libc/helper-macros.h"
 #include "mmu.h"
+#include "libc/bit-support.h"
 
 /***********************************************************************
  * the following code is given
@@ -104,17 +105,21 @@ void mmu_map_sections(fld_t *pt, unsigned va, unsigned pa, unsigned nsec, uint32
     assert(mod_pow2(va, 20));
     assert(mod_pow2(pa, 20));
 
+    for (unsigned offset = 0; offset < nsec; offset++)
+    {
+        mmu_map_section(pt, (va + offset * OneMB), (pa + offset * OneMB), dom);
+    }
+    
     // implement
-    staff_mmu_map_sections(pt, va, pa, nsec,dom);
+    // staff_mmu_map_sections(pt, va, pa, nsec,dom);
 }
 
 // lookup va in pt and return the pte entry.
 fld_t * mmu_lookup_section(fld_t *pt, unsigned va) {
     assert(mod_pow2(va, 20));
-    fld_t *pte = 0;
+    fld_t *pte = (fld_t *)((uint32_t)pt + (va >> 18));
 
-    // implement
-    pte = staff_mmu_lookup_section(pt,va);
+    // pte = staff_mmu_lookup_section(pt,va);
 
     // for today: tag should be set.  in the future you'd return 0.
     demand(pte->tag, invalid section);
@@ -124,9 +129,17 @@ fld_t * mmu_lookup_section(fld_t *pt, unsigned va) {
 // set the ap bits for va,nsec to <perm>
 void mmu_mprotect(fld_t *pt, unsigned va, unsigned nsec, unsigned perm) {
     demand(perm <= 0b11, invalid permission);
-
+    // staff_mmu_mprotect(pt,va,nsec, perm);
+    fld_t *pte;
+    for (unsigned offset = 0; offset < nsec; offset++)
+    {
+        pte = mmu_lookup_section(pt, bits_clr(va + (offset * OneMB), 0, 19));
+        pte->AP = perm;
+    }
+    
+    
     // you need to implement this.
-    staff_mmu_mprotect(pt,va,nsec, perm);
+    // staff_mmu_mprotect(pt,va,nsec, perm);
 
     // must call this routine on each PTE modification (you'll implement
     // next lab).
@@ -159,7 +172,7 @@ static void fld_set_base_addr(fld_t *f, unsigned addr) {
     demand(mod_pow2(addr,20), addr is not aligned!);
 
     // make sure if you read it back, it's what you set it to.
-    todo("set <sec_base_addr>: look in <armv6-vm.h>");
+    f->sec_base_addr = addr >> 20;
 
     // if the previous code worked, this should always succeed.
     assert((f->sec_base_addr << 20) == addr);
@@ -187,7 +200,24 @@ fld_t * mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa, uint32_t dom) {
     //   4. domain to <dom>
     //   5. TEX strongly ordered (B4-12)
     //   6. executable.
-    fld_t *pte = staff_mmu_map_section(pt, va, pa, dom);
+    fld_t *pte = (fld_t *) ((uint32_t)pt + (va>>18));
+    fld_set_base_addr(pte, pa);
+    pte->tag = 0b10;
+    pte->B = 0b0;
+    pte->C = 0b0;
+    pte->XN = 0B0;
+    pte->domain = dom;
+    pte->IMP = 0B0;
+    pte->AP = 0b11;
+    pte->TEX = 0b000;
+    pte->APX = 0b0;
+    pte->S = 0;
+    pte->nG = 0;
+    pte->super = 0;
+    pte->_sbz1 = 0;
+    
+    
+    // fld_t *pte = staff_mmu_map_section(pt, va, pa, dom);
 
     fld_print(pte);
     printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
