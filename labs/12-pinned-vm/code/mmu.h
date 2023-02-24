@@ -5,7 +5,7 @@
 void mmu_init(void);
 void staff_mmu_init(void);
 
-void staff_mmu_reset(void);
+// void staff_mmu_reset(void);
 void mmu_reset(void);
 
 void mmu_disable(void);
@@ -18,7 +18,7 @@ void set_procid_ttbr0(unsigned pid, unsigned asid, void *pt);
 
 // set the 16 2-bit access control fields and do any needed coherence.
 void domain_access_ctrl_set(uint32_t d);
-void staff_domain_access_ctrl_set(uint32_t d);
+// void staff_domain_access_ctrl_set(uint32_t d);
 
 static inline int mmu_is_enabled(void) {
     return cp15_ctrl_reg1_rd().MMU_enabled != 0;

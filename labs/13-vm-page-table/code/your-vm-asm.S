@@ -43,7 +43,7 @@ MK_FN(get_cache_type)
 @ something else (or inline into the c code):
 @  void domain_access_ctrl_set(uint32_t dom_reg);
 MK_FN(cp15_domain_ctrl_wr)
-    asm_todo("implement this thursday")
+    asm_todo("implement this")
     bx lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -53,7 +53,13 @@ MK_FN(cp15_domain_ctrl_wr)
 @   - clear the dcache, icache, tlbs: make sure you obey 
 @     any rules from B2
 MK_FN(mmu_reset)
-    asm_todo("implement this thursday")
+    mov r0, #0
+    INV_TLB(r0)
+    DSB(r0)
+    PREFETCH_FLUSH(r0)
+    INV_ALL_CACHES(r0)
+    DSB(r0)
+    PREFETCH_FLUSH(r0)
     bx lr
 
 
@@ -81,7 +87,20 @@ MK_FN(mmu_disable_set_asm)
     @ flush, but instructions could get fetched before we could disable,
     @ defeating the purpose.
 
-    asm_todo("implement this thursday")
+    mov r1, #0
+    CLEAN_INV_DCACHE(r1)
+    DSB(r1)
+    PREFETCH_FLUSH(r1)
+
+    INV_TLB(r1)
+    INV_ALL_CACHES(r1)
+    FLUSH_BTB(r1)
+    DSB(r1)
+    PREFETCH_FLUSH(r1)
+
+    CONTROL_REG1_WR(r0)
+    PREFETCH_FLUSH(r1)
+
     bx lr
 
 @ void mmu_enable_set_asm(cp15_ctrl_reg1_t c);
@@ -90,7 +109,19 @@ MK_FN(mmu_disable_set_asm)
 @ make sure you look at arm1176, 6-9.
 @
 MK_FN(mmu_enable_set_asm)
-    asm_todo("implement this thursday")
+    mov r1, #0
+    INV_ICACHE(r1)
+    DSB(r1)
+
+    CONTROL_REG1_WR(r0)
+    PREFETCH_FLUSH(r1)
+    
+    INV_TLB(r1)
+    INV_ALL_CACHES(r1)
+    FLUSH_BTB(r1)
+    DSB(r1)
+    PREFETCH_FLUSH(r1)
+
     bx lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -101,7 +132,25 @@ MK_FN(mmu_enable_set_asm)
 @
 @ this is the fanciest one.
 MK_FN(cp15_set_procid_ttbr0)
-    asm_todo("implement this thursday")
+    mov r2, #0
+    DSB(r2)
+    ASID_SET(r2)
+    PREFETCH_FLUSH(r2)
+
+    TTBR0_SET(r1)
+    PREFETCH_FLUSH(r2)
+    TTBR1_SET(r2)
+    PREFETCH_FLUSH(r2)
+    TTBR_BASE_CTRL_WR(r2)
+    PREFETCH_FLUSH(r2)
+
+    FLUSH_BTB(r2)
+    DSB(r2)
+    PREFETCH_FLUSH(r2)
+
+    ASID_SET(r0)
+    PREFETCH_FLUSH(r2)
+
     bx lr
 
 

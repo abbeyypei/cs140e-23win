@@ -85,13 +85,13 @@ void domain_fault(unsigned pc) {
     uint32_t dfsr = dfsr_get();
     debug("Data Abort Fault -- pc: %x reason: %b\n", pc, bits_get(dfsr, 0, 3));
     
-    staff_domain_access_ctrl_set(~0); 
+    domain_access_ctrl_set(~0); 
 }
 
 void prefetch_fault(unsigned pc) {
     uint32_t dfsr = dfsr_get();
     debug("Prefetch Abort Fault -- pc: %x reason: %b\n", pc, bits_get(dfsr, 0, 3));
-    staff_domain_access_ctrl_set(~0); 
+    domain_access_ctrl_set(~0); 
     return;
 }
 

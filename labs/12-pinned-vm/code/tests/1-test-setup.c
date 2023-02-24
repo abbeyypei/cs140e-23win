@@ -62,7 +62,7 @@ void notmain(void) {
     trace("about to enable\n");
 
     // b4-42
-    staff_domain_access_ctrl_set(~0); 
+    domain_access_ctrl_set(~0); 
 
     lockdown_print_entries("about to turn on first time");
     staff_mmu_on_first_time(1, null_pt);
