@@ -11,9 +11,10 @@
 
 /* one time initialation of caches, tlb, etc */
 void mmu_init(void);
-// void staff_mmu_init(void);
 // install trap handlers: should make more fine-grained.
 void mmu_install_handlers(void);
+
+void mmu_on_first_time(uint32_t asid, void *empty_pt);
 
 // allocate page table and initialize.  handles alignment.
 //
@@ -34,18 +35,15 @@ fld_t *mmu_pt_init(void *addr, unsigned nbytes);
 
 // map a 1mb section starting at <va> to <pa>
 fld_t *mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa, uint32_t dom);
-fld_t *staff_mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa, uint32_t dom);
 
 // map <nsec> 1mb sections starting at <va> to <pa>
 void mmu_map_sections(fld_t *pt, unsigned va, unsigned pa, unsigned nsec, uint32_t dom);
-void staff_mmu_map_sections(fld_t *pt, unsigned va, unsigned pa, unsigned nsec, uint32_t dom);
 
 // lookup section <va> in page table <pt>
 fld_t *mmu_lookup(fld_t *pt, uint32_t va);
 
 // called to sync after a set of pte modifications: flushes everything.
 void mmu_sync_pte_mods(void);
-void staff_mmu_sync_pte_mods(void);
 
 // *<pte> = e.   more precisely flushes state.
 void mmu_sync_pte_mod(fld_t *pte, fld_t e);
@@ -134,7 +132,7 @@ void mmu_enable_set_asm(cp15_ctrl_reg1_t c);
  * simple helpers.
  */
 int mmu_is_enabled(void);
-int staff_mmu_is_enabled(void);
+// int staff_mmu_is_enabled(void);
 
 // b4-20
 enum {
