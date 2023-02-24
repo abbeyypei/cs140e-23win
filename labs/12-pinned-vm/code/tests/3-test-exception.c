@@ -48,7 +48,7 @@ void notmain(void) {
     foo();
 
     
-    staff_mmu_disable();
+    mmu_disable();
     assert(!mmu_is_enabled());
     trace("MMU is off!\n");
     trace("phys addr1=%x\n", GET32(phys_addr1));

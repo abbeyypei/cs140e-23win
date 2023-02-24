@@ -3,16 +3,16 @@
 #include "armv6-cp15.h"
 
 void mmu_init(void);
-void staff_mmu_init(void);
+// void staff_mmu_init(void);
 
 // void staff_mmu_reset(void);
 void mmu_reset(void);
 
 void mmu_disable(void);
-void staff_mmu_disable(void);
+// void staff_mmu_disable(void);
 
 void mmu_enable(void);
-void staff_mmu_enable(void);
+// void staff_mmu_enable(void);
 
 void set_procid_ttbr0(unsigned pid, unsigned asid, void *pt);
 

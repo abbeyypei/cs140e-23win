@@ -34,9 +34,6 @@ void pin_mmu_sec(unsigned idx,
                 uint32_t pa,
                 pin_t e) {
 
-    // staff_pin_mmu_sec(idx, va, pa, e);
-    // return;
-
     demand(idx < 8, lockdown index too large);
     // lower 20 bits should be 0.
     demand(bits_get(va, 0, 19) == 0, only handling 1MB sections);
@@ -134,9 +131,6 @@ void pin_procmap(procmap_t *p) {
     }
 }
 
-void domain_access_ctrl_set(uint32_t d) {
-    staff_domain_access_ctrl_set(d);
-}
 
 // turn the pinned MMU system on.
 //    1. initialize the MMU (maybe not actually needed): clear TLB, caches
@@ -151,13 +145,11 @@ void domain_access_ctrl_set(uint32_t d) {
 //       it off.
 //    6. profit!
 void pin_mmu_on(procmap_t *p) {
-    // staff_pin_mmu_on(p);
-    // return;
 
     assert(!mmu_is_enabled());
 
     // we have to clear the MMU before setting any entries.
-    staff_mmu_init();
+    mmu_init();
     pin_procmap(p);
 
     void *null_pt = kmalloc_aligned(4096*4, 1<<14);
@@ -172,7 +164,7 @@ void pin_mmu_on(procmap_t *p) {
     extern uint32_t interrupt_table[];
     vector_base_set(interrupt_table);
 
-    staff_mmu_on_first_time(1, null_pt);
+    mmu_on_first_time(1, null_pt);
     assert(mmu_is_enabled());
     pin_debug("enabled!\n");
 

@@ -55,8 +55,6 @@ MK_FN(cp15_domain_ctrl_wr)
 MK_FN(mmu_reset)
     mov r0, #0
     INV_TLB(r0)
-    DSB(r0)
-    PREFETCH_FLUSH(r0)
     INV_ALL_CACHES(r0)
     DSB(r0)
     PREFETCH_FLUSH(r0)
@@ -92,7 +90,6 @@ MK_FN(mmu_disable_set_asm)
     DSB(r1)
     PREFETCH_FLUSH(r1)
 
-    INV_TLB(r1)
     INV_ALL_CACHES(r1)
     FLUSH_BTB(r1)
     DSB(r1)
@@ -100,6 +97,7 @@ MK_FN(mmu_disable_set_asm)
 
     CONTROL_REG1_WR(r0)
     PREFETCH_FLUSH(r1)
+    DSB(r1)
 
     bx lr
 
@@ -115,6 +113,7 @@ MK_FN(mmu_enable_set_asm)
 
     CONTROL_REG1_WR(r0)
     PREFETCH_FLUSH(r1)
+    DSB(r1)
     
     INV_TLB(r1)
     INV_ALL_CACHES(r1)
@@ -154,17 +153,27 @@ MK_FN(cp15_set_procid_ttbr0)
     bx lr
 
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ you need this for pinned-vm.c
-@
-@ this just turns the MMU on for the first time.
-@ r0 = asid
-@ r1 = pointer to empty page table
-@
-@ is a combination/simplification of mmu_init() and 
-@ mmu_enable_set_asm().
-@
-@ also could just call the above from C code! :)
-MK_FN(mmu_on_first_time)
-    asm_todo("implement this for pinned vm")
+MK_FN(mmu_sync_pte_mods) 
+    mov r0, #0
+    CLEAN_INV_DCACHE(r0)
+    DSB(r0)
+    INV_TLB(r0)
+    FLUSH_BTB(r0)
+    DSB(r0)
+    PREFETCH_FLUSH(r0)
+    bx lr
+    
+MK_FN(cp15_ctrl_reg1_rd)
+    CONTROL_REG1_RD(r0)
+    bx lr
+
+MK_FN(cp15_ctrl_reg1_rd_u32)
+    CONTROL_REG1_RD(r0)
+    bx lr
+
+MK_FN(cp15_ctrl_reg1_wr)
+    CONTROL_REG1_WR(r0)
+    mov r1, #0
+    PREFETCH_FLUSH(r1)
+    DSB(r1)
     bx lr

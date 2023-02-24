@@ -47,7 +47,7 @@ void data_abort_vector(unsigned lr) {
                 printk("fault addr=%x\n", addr);
                 printk("%x is within 1mb of lowest stack pointer %x\n", addr, proc.sp_lowest_addr);
                 mmu_map_section(proc.pt, bits_clr(addr, 0, 19), bits_clr(addr, 0, 19), proc.dom_id);
-                staff_mmu_sync_pte_mods();
+                mmu_sync_pte_mods();
             } else {
                 if (rw) {
                     printk("ERROR: attempting to store unmapped addr %x: dying (reason=%b)\n", addr, fs);
@@ -65,7 +65,7 @@ void data_abort_vector(unsigned lr) {
                 printk("section permission fault: %x\n", addr);
                 printk("changed permissions to r/w: %x\n", addr);
                 mmu_mark_sec_rw(proc.pt, addr, 1);
-                staff_mmu_sync_pte_mods();
+                mmu_sync_pte_mods();
             }
             
         }

@@ -84,6 +84,11 @@ void mmu_enable(void) {
     mmu_enable_set(c);
 }
 
+void mmu_on_first_time(uint32_t asid, void *empty_pt) {
+    // mmu_init();
+    mmu_enable();
+}
+
 // C end of this: does sanity checking then calls asm.
 void set_procid_ttbr0(unsigned pid, unsigned asid, fld_t *pt) {
     assert((pid >> 24) == 0);
@@ -135,7 +140,7 @@ void mmu_mprotect(fld_t *pt, unsigned va, unsigned nsec, unsigned perm) {
 
     // must call this routine on each PTE modification (you'll implement
     // next lab).
-    // staff_mmu_sync_pte_mods();
+    mmu_sync_pte_mods();
 }
 
 // set so that we use armv6 memory.
@@ -225,7 +230,6 @@ uint32_t domain_access_ctrl_get(void) {
 // b4-42
 // set domain access control register to <r>
 void domain_access_ctrl_set(uint32_t r) {
-    // staff_domain_access_ctrl_set(r);
     dom_set(r);
     assert(domain_access_ctrl_get() == r);
 }

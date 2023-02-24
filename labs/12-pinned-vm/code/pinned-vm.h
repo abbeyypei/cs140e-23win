@@ -244,26 +244,20 @@ void pin_mmu_sec(unsigned idx,
                 uint32_t pa,
                 pin_t attr);
 
-void staff_pin_mmu_sec(unsigned idx,
-                uint32_t va,
-                uint32_t pa,
-                pin_t attr);
 
 // do a manual translation in tlb and see if exists (1)
 // returns the result in <result>
 int tlb_contains_va(uint32_t *result, uint32_t va);
-int staff_tlb_contains_va(uint32_t *result, uint32_t va);
 
 
 // turn mmu on for the first time: empty_pt is just a 4k vector
 // of 0s so we get a fault if it's ever examined.
-void staff_mmu_on_first_time(uint32_t asid, void *empty_pt);
+// void staff_mmu_on_first_time(uint32_t asid, void *empty_pt);
 void mmu_on_first_time(uint32_t asid, void *empty_pt);
-
+// void staff_mmu_init(void);
 
 // turn pinned MMU on.
 void pin_mmu_on(procmap_t *p);
-void staff_pin_mmu_on(procmap_t *p);
 
 #if 0
 // turn pinned MMU on with <vecs>
@@ -284,7 +278,6 @@ pin_mmu_on(procmap_t *p) {
 
 // check that <va> is pinned in the tlb.
 void pin_check_exists(uint32_t va);
-void staff_pin_check_exists(uint32_t va);
 
 // print <msg> then all valid pinned entries.
 // note: if you print everything you see a lot of
