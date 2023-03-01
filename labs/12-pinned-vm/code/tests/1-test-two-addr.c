@@ -89,7 +89,7 @@ void notmain(void) {
     pin_mmu_sec(user_idx, user_addr, phys_addr2, user2);
 
     lockdown_print_entries("about to turn on");
-    set_procid_ttbr0(0, ASID2, null_pt);
+    set_procid_ttbr0(0x140e, ASID2, null_pt);
 
     mmu_enable();
 

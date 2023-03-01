@@ -54,9 +54,14 @@ MK_FN(cp15_domain_ctrl_wr)
 @     any rules from B2
 MK_FN(mmu_reset)
     mov r0, #0
+    @B2-22
+    @ invalidate TLB since TLB will be used later 
     INV_TLB(r0)
+    @ invalidate cache since MMU will be on for the first time
     INV_ALL_CACHES(r0)
+    @ DSB ensures invalidation completes
     DSB(r0)
+    @ make sure visible
     PREFETCH_FLUSH(r0)
     bx lr
 
@@ -86,18 +91,24 @@ MK_FN(mmu_disable_set_asm)
     @ defeating the purpose.
 
     mov r1, #0
+    @ clean cache since MMU will be disabled
     CLEAN_INV_DCACHE(r1)
     DSB(r1)
     PREFETCH_FLUSH(r1)
 
-    INV_ALL_CACHES(r1)
-    FLUSH_BTB(r1)
+    @ Invalidate ICache
+    INV_ICACHE(r1)
     DSB(r1)
     PREFETCH_FLUSH(r1)
 
+    @ write to ctrl reg 
     CONTROL_REG1_WR(r0)
     PREFETCH_FLUSH(r1)
-    DSB(r1)
+
+    @ B2-24
+    @ flush since MMU is off now
+    FLUSH_BTB(r1)
+    PREFETCH_FLUSH(r1)
 
     bx lr
 
@@ -108,17 +119,21 @@ MK_FN(mmu_disable_set_asm)
 @
 MK_FN(mmu_enable_set_asm)
     mov r1, #0
+    @ invalidate ICache  / (disable ICache also)
     INV_ICACHE(r1)
     DSB(r1)
+    PREFETCH_FLUSH(r1)
+    
+    CONTROL_REG1_RD(r2)
+    bic r2, r2, #12
+    CONTROL_REG1_WR(r2)
+    PREFETCH_FLUSH(r1)
 
+    @ turn MMU on
     CONTROL_REG1_WR(r0)
     PREFETCH_FLUSH(r1)
-    DSB(r1)
     
-    INV_TLB(r1)
-    INV_ALL_CACHES(r1)
     FLUSH_BTB(r1)
-    DSB(r1)
     PREFETCH_FLUSH(r1)
 
     bx lr
@@ -132,10 +147,13 @@ MK_FN(mmu_enable_set_asm)
 @ this is the fanciest one.
 MK_FN(cp15_set_procid_ttbr0)
     mov r2, #0
+
+    @ reset ASID to 0, need DSB since PTE changed
     DSB(r2)
     ASID_SET(r2)
     PREFETCH_FLUSH(r2)
 
+    @ set TTBRs
     TTBR0_SET(r1)
     PREFETCH_FLUSH(r2)
     TTBR1_SET(r2)
@@ -143,11 +161,13 @@ MK_FN(cp15_set_procid_ttbr0)
     TTBR_BASE_CTRL_WR(r2)
     PREFETCH_FLUSH(r2)
 
-    FLUSH_BTB(r2)
+    @ B4 - set ASID back
     DSB(r2)
+    ASID_SET(r0)
     PREFETCH_FLUSH(r2)
 
-    ASID_SET(r0)
+    @ flush BTB since TTBR changed
+    FLUSH_BTB(r2)
     PREFETCH_FLUSH(r2)
 
     bx lr
@@ -155,11 +175,17 @@ MK_FN(cp15_set_procid_ttbr0)
 
 MK_FN(mmu_sync_pte_mods) 
     mov r0, #0
+    @ clean data cache
     CLEAN_INV_DCACHE(r0)
     DSB(r0)
+    PREFETCH_FLUSH(r0)
+
     INV_TLB(r0)
-    FLUSH_BTB(r0)
     DSB(r0)
+    PREFETCH_FLUSH(r0)
+
+    @ change BTB since PTE changed
+    FLUSH_BTB(r0)
     PREFETCH_FLUSH(r0)
     bx lr
     
@@ -175,5 +201,4 @@ MK_FN(cp15_ctrl_reg1_wr)
     CONTROL_REG1_WR(r0)
     mov r1, #0
     PREFETCH_FLUSH(r1)
-    DSB(r1)
     bx lr

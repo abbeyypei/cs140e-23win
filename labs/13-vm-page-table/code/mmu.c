@@ -85,8 +85,9 @@ void mmu_enable(void) {
 }
 
 void mmu_on_first_time(uint32_t asid, void *empty_pt) {
-    // mmu_init();
+    mmu_init();
     mmu_enable();
+    set_procid_ttbr0(0x140e, 1, empty_pt);
 }
 
 // C end of this: does sanity checking then calls asm.
