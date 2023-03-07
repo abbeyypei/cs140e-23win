@@ -15,8 +15,10 @@
 //  0xd3d3d3,
 
 enum {
-    server_addr = 0xd5d5d5,
-    client_addr = 0xe5e5e5,
+    server_addr = 0xd6d6d6,
+    client_addr = 0xe6e6e6,
+    server_addr_other = 0xd7d6d5,
+    client_addr_other = 0xe7e7e7,
 };
 
 enum {
