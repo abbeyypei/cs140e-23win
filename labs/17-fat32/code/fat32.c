@@ -179,11 +179,13 @@ pi_directory_t fat32_readdir(fat32_fs_t *fs, pi_dirent_t *dirent) {
   // file.  Don't include empty dirents, LFNs, or Volume IDs.  You can use
   // `dirent_convert`.
   uint32_t num = 0;
+  fat32_dirent_t *ent;
   for (unsigned i = 0; i < n_dirents; i++) {
-    if (dirents[i].attr == 0 || dirents[i].attr == FAT32_LONG_FILE_NAME || dirents[i].attr == FAT32_VOLUME_LABEL) {
-      break;
+    ent = dirents + i;
+    if (ent->filename[0] == 0 || ent->filename[0] == 0xe5 || fat32_dirent_is_lfn(ent)) {
+      continue;
     }
-    pi_dirents[i] = dirent_convert(&dirents[i]);
+    pi_dirents[num] = dirent_convert(ent);
     num++;
   }
 
@@ -209,20 +211,22 @@ pi_dirent_t *fat32_stat(fat32_fs_t *fs, pi_dirent_t *directory, char *filename) 
   // TODO: use `get_dirents` to read the raw dirent structures from the disk
   uint32_t n_dirents;
   fat32_dirent_t *dirents = get_dirents(fs, directory->cluster_id, &n_dirents);
+  fat32_dirent_t *ent;
 
   // TODO: Iterate through the directory's entries and find a dirent with the
   // provided name.  Return NULL if no such dirent exists.  You can use
   // `find_dirent_with_name` if you've implemented it.
-  char name;
-  pi_dirent_t *dirent = kmalloc(sizeof(pi_dirent_t));
-  // for (unsigned i = 0; i < n_dirents; i++) {
-  //   fat32_dirent_name(&dirents[i], &name);
-  //   if (strcmp(filename, &name) == 0) {
-  //     trace("!!!!!file match %s %s %d\n", filename, &name, dirents[i].file_nbytes);
-  //     *dirent = dirent_convert(&dirents[i]);
-  //     return dirent;
-  //   }
-  // }
+  char name[100];
+  pi_dirent_t *dirent;
+  for (unsigned i = 0; i < n_dirents; i++) {
+    ent = dirents + i;
+    fat32_dirent_name(ent, name);
+    if (strcmp(filename, name) == 0) {
+      pi_dirent_t *dirent = kmalloc(sizeof(pi_dirent_t));
+      dirent[0] = dirent_convert(ent);
+      return dirent;
+    }
+  }
   return NULL;
 }
 
@@ -235,24 +239,19 @@ pi_file_t *fat32_read(fat32_fs_t *fs, pi_dirent_t *directory, char *filename) {
   uint32_t n_dirents;
   fat32_dirent_t *dirents = get_dirents(fs, directory->cluster_id, &n_dirents);
   pi_dirent_t *dirent = kmalloc(sizeof(pi_dirent_t));
-  trace("number of dirents %d\n", n_dirents);
-  char name;
+  char name[100];
   for (unsigned i = 0; i < n_dirents; i++) {
-    fat32_dirent_name(&dirents[i], &name);
-    // trace("file match %s %s %d\n", filename, &name, dirents[i].file_nbytes);
-    if (strcmp(filename, &name) == 0) {
-      // trace("!!!!!file match %s %s %d\n", filename, &name, dirents[i].file_nbytes);
+    fat32_dirent_name(&dirents[i], name);
+    if (strcmp(filename, name) == 0) {
       dirent[0] = dirent_convert(&dirents[i]);
       break;
     }
   }
 
-  trace("dirent %s %d %x\n", dirent->name, dirent->nbytes, dirent->cluster_id);
 
   // TODO: figure out the length of the cluster chain
   uint32_t length = get_cluster_chain_length(fs, dirent->cluster_id);
 
-  trace("got length %d\n", length);
 
   // TODO: allocate a buffer large enough to hold the whole file
   uint8_t *data = kmalloc(length * (fs->sectors_per_cluster) * 512);
